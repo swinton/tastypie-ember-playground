@@ -1,0 +1,108 @@
+{% load emberplay_extras %}<!DOCTYPE html>
+<html>
+<head>
+<script src="//swjs.s3.amazonaws.com/libs/jquery.min.js"></script>
+<script src="//swjs.s3.amazonaws.com/emberplay/handlebars.js"></script>
+<script src="//swjs.s3.amazonaws.com/emberplay/ember.js"></script>
+<script src="//swjs.s3.amazonaws.com/emberplay/ember-data.js"></script>
+<script src="//swjs.s3.amazonaws.com/emberplay/tastypie_adapter.js"></script>
+<script src="//swjs.s3.amazonaws.com/emberplay/tastypie_serializer.js"></script>
+<script>
+var App = Ember.Application.create();
+
+App.Router.map(function() {
+  this.resource("messages");
+  this.resource("users");
+});
+
+App.IndexRoute = Ember.Route.extend({
+    redirect: function() {
+        this.transitionTo("messages");
+    }
+});
+
+App.MessagesRoute = Ember.Route.extend({
+    model: function(args) {
+        // debugger;
+        return App.Message.find();
+    }
+});
+
+App.UsersRoute = Ember.Route.extend({
+    model: function() {
+        return App.User.find();
+    }
+});
+
+
+App.store = DS.Store.create({
+    revision: 11,
+    adapter: DS.DjangoTastypieAdapter.extend({
+      namespace: "api/1"
+    })
+});
+
+App.Message = DS.Model.extend({
+    user: DS.belongsTo("App.User"),
+    text: DS.attr('string')
+});
+
+App.User = DS.Model.extend({
+    messages: DS.hasMany("App.Message"),
+    screen_name: DS.attr("string")
+});
+
+</script>
+<meta charset=utf-8 />
+<title>Ember.js Playground</title>
+</head>
+<body>
+
+  <script type="text/x-handlebars" data-template-name="application">
+    {% raw %}
+    <div id="nav">
+        <span>{{#linkTo "users"}}users{{/linkTo}}</span>
+        <span>{{#linkTo "messages"}}messages{{/linkTo}}</span>
+    </div>
+    {{ outlet }}
+    {% endraw %}
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="messages">
+    {% raw %}
+    <h2>Messages</h2>
+    <p>Messages loads Messages from <tt>/messages</tt> and loads related Users from <tt>/users</tt>.</p>
+    <ul>
+        {{#each message in controller}}
+        {{ log message }}
+        <li>@{{ message.user.screen_name }}: {{ message.text }}</li>
+        {{/each}}
+    </ul>
+    {% endraw %}
+  </script>
+
+  <script type="text/x-handlebars" data-template-name="users">
+    {% raw %}
+    <h2>Users</h2>
+    <p>Users loads Users from <tt>/users</tt> and loads related Messages from <tt>/messages</tt>.</p>
+    <ul>
+        {{#each user in controller}}
+        {{ log user }}
+        <li>
+            @{{ user.screen_name }}
+            <ul>
+            {{#each message in user.messages}}
+                <li>{{ message.text }}</li>
+            {{/each}}
+            </ul>
+        </li>
+        {{/each}}
+    </ul>
+    {% endraw %}
+  </script>
+
+  <script>
+  console.info("routes", App.Router.router.recognizer.names);
+  </script>
+</body>
+</html>
